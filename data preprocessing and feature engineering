@@ -1,0 +1,93 @@
+#---------------------------------------------------Data Preprocessing-----------------------------------------------------------------------------
+# -------------------Step 1-------------------------------
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+from sklearn.preprocessing import StandardScaler, LabelEncoder, OneHotEncoder
+from sklearn.decomposition import PCA
+from sklearn.impute import SimpleImputer
+from sklearn.feature_selection import SelectKBest, f_classif
+
+# Load dataset
+titanic = pd.read_csv('titanic.csv')
+
+#-----------------------Step 2----------------------------------
+# Handling Missing Values
+
+# Check for missing values
+print(titanic.isnull().sum())
+
+# Fill missing 'Age' with median, 'Embarked' with mode, 'Cabin' with 'Unknown'
+titanic['Age'].fillna(titanic['Age'].median(), inplace=True)
+titanic['Embarked'].fillna(titanic['Embarked'].mode()[0], inplace=True)
+titanic['Cabin'].fillna('Unknown', inplace=True)
+
+# Outlier Detection and Handling
+# Detect outliers in 'Fare'
+sns.boxplot(x=titanic['Fare'])
+
+# Log transform 'Fare' to reduce skewness
+titanic['Fare'] = np.log1p(titanic['Fare'])
+
+#------------------------Step 3----------------------------------
+
+# Scaling and Normalization
+
+# Standard scaling
+scaler = StandardScaler()
+titanic[['Age', 'Fare']] = scaler.fit_transform(titanic[['Age', 'Fare']])
+
+# Encoding Categorical Variables
+
+# Label encoding for 'Sex'
+label_encoder = LabelEncoder()
+titanic['Sex'] = label_encoder.fit_transform(titanic['Sex'])
+
+# One-Hot Encoding for 'Embarked'
+titanic = pd.get_dummies(titanic, columns=['Embarked'])
+
+#--------------------------Step 4------------------------------------------
+
+# Dimensionality Reduction
+
+# PCA
+pca = PCA(n_components=2)
+titanic_pca = pca.fit_transform(titanic[['Age', 'Fare']])
+
+# Feature Selection
+# Select K best features
+X = titanic.drop('Survived', axis=1)
+y = titanic['Survived']
+selector = SelectKBest(f_classif, k=5)
+X_new = selector.fit_transform(X, y)
+selected_features = X.columns[selector.get_support(indices=True)]
+print(selected_features)
+
+#---------------------------------Feature Engineering--------------------------------
+
+#----------------------------------Step 1------------------------------------------
+
+# Create interaction terms
+titanic['Age*Class'] = titanic['Age'] * titanic['Pclass']
+
+# Domain-specific feature
+titanic['FamilySize'] = titanic['SibSp'] + titanic['Parch'] + 1
+
+#-----------------------------------------Step 2-----------------------------------
+
+# Log transformation already applied to 'Fare'
+# Apply Box-Cox transformation to 'Age'
+from scipy.stats import boxcox
+titanic['Age'], _ = boxcox(titanic['Age'] + 1)
+
+
+#-----------------------------------------Step 3-----------------------------------
+
+# Group by operations
+titanic['Fare_per_person'] = titanic['Fare'] / titanic['FamilySize']
+
+#--------------------------------------Step 4----------------------------------------
+
+# No datetime features in Titanic dataset; example:
+# titanic['year'] = pd.to_datetime(titanic['Date']).dt.year
