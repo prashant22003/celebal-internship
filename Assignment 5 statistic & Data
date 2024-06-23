@@ -1,0 +1,62 @@
+#---Step 01 -----------------------------------------------
+
+import pandas as pd
+
+# Sample dataset
+data = {
+    'Age': [25, 30, 35, None, 40],
+    'Salary': [50000, 60000, None, 80000, 100000],
+    'Gender': ['Male', 'Female', 'Female', 'Male', None],
+    'Purchase': ['No', 'Yes', 'No', 'Yes', 'No']
+}
+
+df = pd.DataFrame(data)
+print(df)
+
+#---Step 02 -----------------------------------------------
+
+# Impute missing values with mean for numerical features
+df['Age'].fillna(df['Age'].mean(), inplace=True)
+df['Salary'].fillna(df['Salary'].mean(), inplace=True)
+
+# Impute missing values with mode for categorical features
+df['Gender'].fillna(df['Gender'].mode()[0], inplace=True)
+
+print(df)
+
+#---Step 03 ------------------------------------------------
+
+from sklearn.preprocessing import LabelEncoder, OneHotEncoder
+
+# Label Encoding for binary categorical variable
+label_encoder = LabelEncoder()
+df['Purchase'] = label_encoder.fit_transform(df['Purchase'])
+
+# One-Hot Encoding for non-binary categorical variable
+df = pd.get_dummies(df, columns=['Gender'], drop_first=True)
+
+print(df)
+
+
+#---Step 04 --------------------------------------------------
+
+from sklearn.preprocessing import StandardScaler
+
+scaler = StandardScaler()
+df[['Age', 'Salary']] = scaler.fit_transform(df[['Age', 'Salary']])
+
+print(df)
+
+
+#---Step 05 -------------------------------------------------------
+
+# Creating interaction feature
+df['Age_Salary'] = df['Age'] * df['Salary']
+
+# Creating polynomial feature
+df['Age_squared'] = df['Age'] ** 2
+
+# Binning age
+df['Age_bin'] = pd.cut(df['Age'], bins=[-float('inf'), -1, 0, 1], labels=['Low', 'Medium', 'High'])
+
+print(df)
